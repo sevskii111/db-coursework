@@ -1,6 +1,7 @@
 import { connectToDatabase } from "../../../utils/sqlite";
 import { drop } from "./drop";
 import { generateTables } from "../../../utils/tables_content_generator";
+import fs from "fs";
 
 async function create_tables(db) {
   await db.run(`CREATE TABLE teacher (
@@ -19,19 +20,19 @@ async function create_tables(db) {
     discipline_id integer PRIMARY KEY AUTOINCREMENT,
     discipline_name varchar(50) NOT NULL UNIQUE
   );`);
+  await db.run(`CREATE TABLE course (
+    course_id integer PRIMARY KEY AUTOINCREMENT,
+    discipline_id INTEGER REFERENCES discipline(discipline_id) NOT NULL,
+    teacher_id INTEGER REFERENCES teacher(teacher_id) NOT NULL
+  );`);
   await db.run(`CREATE TABLE coursework (
     student_id INTEGER REFERENCES student(student_id) NOT NULL,
     course_id INTEGER REFERENCES course(course_id) NOT NULL,
     coursework_theme varchar(500) NOT NULL,
     PRIMARY KEY (student_id, course_id)
   );`);
-  await db.run(`CREATE TABLE course (
-    course_id integer PRIMARY KEY AUTOINCREMENT,
-    discipline_id INTEGER REFERENCES discipline(discipline_id) NOT NULL,
-    teacher_id INTEGER REFERENCES teacher(teacher_id) NOT NULL
-  );`);
   await db.run(`CREATE TABLE coursework_themes_archive (
-    coursework_theme varchar(500) NOT NULL UNIQUE
+    coursework_theme varchar(500) PRIMARY KEY
   );`);
 }
 
@@ -44,6 +45,7 @@ async function add_triggers(db) {
 
 async function fill_tables(db) {
   const tables = generateTables();
+  //fs.writeFileSync("fill.sql", tables.join("\n\n"));
   for (const table of tables) {
     await db.run(table);
   }
